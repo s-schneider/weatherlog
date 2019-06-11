@@ -3,7 +3,7 @@ import sys
 import matplotlib.pyplot as plt
 
 
-file = sys.argv[1]
+file = 'data.json'  # sys.argv[1]
 
 with open(file, 'r') as fh:
     content = fh.readlines()
@@ -17,5 +17,6 @@ for entry in file_in['feeds']:
             data[key].append(float(values))
 
 
-plt.plot(data['fiedl1'])
+for values in data.values():
+    plt.plot(values)
 plt.show()
