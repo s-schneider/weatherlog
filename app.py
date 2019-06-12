@@ -7,18 +7,15 @@ in your browser.
 '''
 from bokeh.io import curdoc
 from bokeh.layouts import row, column
-from bokeh.models import ColumnDataSource
-# from bokeh.models.widgets import Slider, TextInput
-from bokeh.models import Button
-from bokeh.plotting import figure, show
-from bokeh.models.annotations import Title
+from bokeh.models import ColumnDataSource, Button, Range1d
+from bokeh.plotting import figure
 
 from functools import partial
 
 import json
 import urllib2
-import numpy as np
 
+global current_field
 
 url = 'https://api.thingspeak.com/channels/794255/'
 url += 'feeds.json?api_key=0AWEFXGCB5L3T4LC'
@@ -60,26 +57,23 @@ for f in data.keys():
             continue
         x = range(len(data[f]))
         y = data[f]
-        init_field = f
+        current_field = f
     except Exception:
         continue
 source = ColumnDataSource(data=dict(x=x, y=y))
 
-
 # Set up plot
 plot = figure(plot_height=800, plot_width=800,
-              title=labels[init_field]['label'],
+              title=labels[current_field]['label'],
               tools="crosshair,pan,reset,save,wheel_zoom")
 
 plot.line('x', 'y', source=source, line_width=3, line_alpha=0.6)
+# if 'Temperatur' in labels[current_field]['label']:
+plot.y_range = Range1d(0, 100)
+
 
 # Set up callbacks
-i = 0
-
-
-def update_data(inkey):
-    url = 'https://api.thingspeak.com/channels/794255/'
-    url += 'feeds.json?api_key=0AWEFXGCB5L3T4LC'
+def update_data(inkey, b):
     response = urllib2.urlopen(url)
 
     # Set up data
@@ -97,8 +91,15 @@ def update_data(inkey):
     if d is not None:
         x = range(len(d))
         y = d
-        plot.title.text = labels[inkey]
+        plot.title.text = labels[inkey]['label']
+        if 'Temperatur' in labels[inkey]['label']:
+            print('here')
+            plot.y_range = Range1d(0, 35)
         source.data = dict(x=x, y=y)
+
+
+def update_weather(inkey):
+    print(labels[inkey]['label'])
 
 
 # # Set up layouts and add to document
@@ -127,17 +128,20 @@ button8 = Button(label="%s: %.1f %s" % (labels['field8']['label'],
                                         data['field8'][-1],
                                         labels['field8']['unit']))
 
-button1.on_click(partial(update_data, inkey="field1"))
-button2.on_click(partial(update_data, inkey="field2"))
-button3.on_click(partial(update_data, inkey="field3"))
-button4.on_click(partial(update_data, inkey="field4"))
-button5.on_click(partial(update_data, inkey="field5"))
-button6.on_click(partial(update_data, inkey="field6"))
-button7.on_click(partial(update_data, inkey="field7"))
-button8.on_click(partial(update_data, inkey="field8"))
+button1.on_click(partial(update_data, inkey="field1", b=button1))
+button2.on_click(partial(update_data, inkey="field2", b=button2))
+button3.on_click(partial(update_data, inkey="field3", b=button3))
+button4.on_click(partial(update_data, inkey="field4", b=button4))
+button5.on_click(partial(update_data, inkey="field5", b=button5))
+button6.on_click(partial(update_data, inkey="field6", b=button6))
+button7.on_click(partial(update_data, inkey="field7", b=button7))
+button8.on_click(partial(update_data, inkey="field8", b=button8))
 
 inputs = column(button1, button2, button3, button4, button5, button6,
                 button7, button8)  # , offset, amplitude, phase, freq)
 
 curdoc().add_root(row(inputs, plot, width=800))
 curdoc().title = "Wetterstation"
+
+# curdoc().add_periodic_callback(partial(update_weather,
+#                                        inkey=current_field), 1000)
