@@ -53,9 +53,13 @@ for entry in data_feed['feeds']:
                 data[key] = np.nan
 
 # N = 200
-init_field = 'field7'
-x = range(len(data[init_field]))
-y = data[init_field]
+for f in data.keys():
+    try:
+        x = range(len(data[f]))
+        y = data[f]
+        init_field = f
+    except Exception:
+        continue
 source = ColumnDataSource(data=dict(x=x, y=y))
 
 
@@ -94,14 +98,14 @@ def update_data(inkey):
 
 
 # # Set up layouts and add to document
-button1 = Button(label="%s: %s" % (labels['field1'], data['field1']))
-button2 = Button(label="%s: %s" % (labels['field2'], data['field2']))
+button1 = Button(label="%s: %s" % (labels['field1'], data['field1'][-1]))
+button2 = Button(label="%s: %s" % (labels['field2'], data['field2'][-1]))
 button3 = Button(label="%s" % labels['field3'])
 button4 = Button(label="%s" % labels['field4'])
 button5 = Button(label="%s" % labels['field5'])
 button6 = Button(label="%s" % labels['field6'])
-button7 = Button(label="%s: %.2f" % (labels['field7'], data['field7'][-1]))
-button8 = Button(label="%s: %.2f" % (labels['field8'], data['field8'][-1]))
+button7 = Button(label="%s: %.2f" % (labels['field7'], data['field7']))
+button8 = Button(label="%s: %.2f" % (labels['field8'], data['field8']))
 
 button1.on_click(partial(update_data, inkey="field1"))
 button2.on_click(partial(update_data, inkey="field2"))
