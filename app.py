@@ -11,11 +11,27 @@ from bokeh.models import ColumnDataSource, Button, Range1d
 from bokeh.plotting import figure
 
 from functools import partial
-
 import json
 import urllib2
-
+import time
+import numpy as np
 global current_field
+
+
+def get_xaxis(data):
+    sampling_rate = 1
+    t = time.time()
+    axis = np.arange(len(data)) * sampling_rate
+    xaxis = [t - (max(axis) - x) for x in axis]
+    xaxis = [time.gmtime(t - (max(axis) - x)) for x in axis]
+    xaxis = ["%.2d:%.2d:%.2d" % (x.tm_hour, x.tm_min, x.tm_sec) for x in xaxis]
+
+    label_dict = {}
+    for i, x in enumerate(xaxis):
+        if i % 20 == 0:
+            label_dict[i] = x
+    return np.arange(len(data)), label_dict
+
 
 url = 'https://api.thingspeak.com/channels/794255/'
 url += 'feeds.json?api_key=0AWEFXGCB5L3T4LC'
@@ -49,27 +65,43 @@ for entry in data_feed['feeds']:
             except Exception:
                 data[key] = [-1]
 
-# N = 200
-# print(data)
-for f in data.keys():
-    try:
-        if f == [-1]:
-            continue
-        x = range(len(data[f]))
-        y = data[f]
-        current_field = f
-    except Exception:
-        continue
+# for f in data.keys():
+#     try:
+#         if f == [-1]:
+#             continue
+#         # x = range(len(data[f])
+#         x, xaxis_ticks = get_xaxis(data[f])
+#         y = data[f]
+#         current_field = f
+#     except Exception:
+#         continue
+
+current_field = 'field7'
+x, xaxis_ticks = get_xaxis(data[current_field])
+y = data[current_field]
 source = ColumnDataSource(data=dict(x=x, y=y))
 
 # Set up plot
 plot = figure(plot_height=800, plot_width=800,
               title=labels[current_field]['label'],
-              tools="crosshair,pan,reset,save,wheel_zoom")
+              tools="crosshair,pan,reset,save,wheel_zoom",
+              x_axis_label='Zeit')
 
 plot.line('x', 'y', source=source, line_width=3, line_alpha=0.6)
+plot.y_range = Range1d(0, 30)
 # if 'Temperatur' in labels[current_field]['label']:
-plot.y_range = Range1d(0, 100)
+#     plot.y_range.start = 0
+#     plot.y_range.end = 50
+# elif 'Luftfeuchtigkeit' in labels[current_field]['label']:
+#     plot.y_range.start = 0
+#     plot.y_range.end = 100
+# else:
+#     plot.y_range.start = min(y)-10
+#     plot.y_range.end = max(y)+10
+
+plot.yaxis.axis_label = labels[current_field]['unit']
+plot.xaxis.ticker = xaxis_ticks.keys()
+plot.xaxis.major_label_overrides = xaxis_ticks
 
 
 # Set up callbacks
@@ -89,12 +121,20 @@ def update_data(inkey, b):
                     d = None
 
     if d is not None:
-        x = range(len(d))
+        x, xaxis_ticks = get_xaxis(d)
         y = d
         plot.title.text = labels[inkey]['label']
         if 'Temperatur' in labels[inkey]['label']:
-            print('here')
-            plot.y_range = Range1d(0, 35)
+            plot.y_range.start = 0
+            plot.y_range.end = 30
+        elif 'Luftfeuchtigkeit' in labels[inkey]['label']:
+            plot.y_range.start = 0
+            plot.y_range.end = 100
+        else:
+            plot.y_range.start = min(d)-10
+            plot.y_range.end = max(d)+10
+        plot.yaxis.axis_label = labels[inkey]['unit']
+
         source.data = dict(x=x, y=y)
 
 
@@ -103,42 +143,43 @@ def update_weather(inkey):
 
 
 # # Set up layouts and add to document
-button1 = Button(label=r"%s: %s %s" % (labels['field1']['label'],
-                                       data['field1'][-1],
-                                       labels['field1']['unit']))
-button2 = Button(label=r"%s: %s %s" % (labels['field2']['label'],
-                                       data['field2'][-1],
-                                       labels['field2']['unit']))
-button3 = Button(label="%s: %.1f %s" % (labels['field3']['label'],
-                                        data['field3'][-1],
-                                        labels['field3']['unit']))
-button4 = Button(label="%s: %.1f %s" % (labels['field4']['label'],
-                                        data['field4'][-1],
-                                        labels['field4']['unit']))
-button5 = Button(label="%s: %s %s" % (labels['field5']['label'],
-                                      data['field5'][-1],
-                                      labels['field5']['unit']))
-button6 = Button(label="%s: %s %s" % (labels['field6']['label'],
-                                      data['field6'][-1],
-                                      labels['field6']['unit']))
-button7 = Button(label="%s: %.1f %s" % (labels['field7']['label'],
-                                        data['field7'][-1],
-                                        labels['field7']['unit']))
-button8 = Button(label="%s: %.1f %s" % (labels['field8']['label'],
-                                        data['field8'][-1],
-                                        labels['field8']['unit']))
+buttons = {}
+buttons[1] = Button(label=r"%s: %s %s" % (labels['field1']['label'],
+                                          data['field1'][-1],
+                                          labels['field1']['unit']))
+buttons[2] = Button(label=r"%s: %s %s" % (labels['field2']['label'],
+                                          data['field2'][-1],
+                                          labels['field2']['unit']))
+buttons[3] = Button(label="%s: %.1f %s" % (labels['field3']['label'],
+                                           data['field3'][-1],
+                                           labels['field3']['unit']))
+buttons[4] = Button(label="%s: %.1f %s" % (labels['field4']['label'],
+                                           data['field4'][-1],
+                                           labels['field4']['unit']))
+buttons[5] = Button(label="%s: %s %s" % (labels['field5']['label'],
+                                         data['field5'][-1],
+                                         labels['field5']['unit']))
+buttons[6] = Button(label="%s: %s %s" % (labels['field6']['label'],
+                                         data['field6'][-1],
+                                         labels['field6']['unit']))
+buttons[7] = Button(label="%s: %.1f %s" % (labels['field7']['label'],
+                                           data['field7'][-1],
+                                           labels['field7']['unit']))
+buttons[8] = Button(label="%s: %.1f %s" % (labels['field8']['label'],
+                                           data['field8'][-1],
+                                           labels['field8']['unit']))
 
-button1.on_click(partial(update_data, inkey="field1", b=button1))
-button2.on_click(partial(update_data, inkey="field2", b=button2))
-button3.on_click(partial(update_data, inkey="field3", b=button3))
-button4.on_click(partial(update_data, inkey="field4", b=button4))
-button5.on_click(partial(update_data, inkey="field5", b=button5))
-button6.on_click(partial(update_data, inkey="field6", b=button6))
-button7.on_click(partial(update_data, inkey="field7", b=button7))
-button8.on_click(partial(update_data, inkey="field8", b=button8))
+buttons[1].on_click(partial(update_data, inkey="field1", b=buttons[1]))
+buttons[2].on_click(partial(update_data, inkey="field2", b=buttons[2]))
+buttons[3].on_click(partial(update_data, inkey="field3", b=buttons[3]))
+buttons[4].on_click(partial(update_data, inkey="field4", b=buttons[4]))
+buttons[5].on_click(partial(update_data, inkey="field5", b=buttons[5]))
+buttons[6].on_click(partial(update_data, inkey="field6", b=buttons[6]))
+buttons[7].on_click(partial(update_data, inkey="field7", b=buttons[7]))
+buttons[8].on_click(partial(update_data, inkey="field8", b=buttons[8]))
 
-inputs = column(button1, button2, button3, button4, button5, button6,
-                button7, button8)  # , offset, amplitude, phase, freq)
+inputs = column(buttons[1], buttons[2], buttons[3], buttons[4], buttons[5],
+                buttons[6], buttons[7], buttons[8])
 
 curdoc().add_root(row(inputs, plot, width=800))
 curdoc().title = "Wetterstation"
