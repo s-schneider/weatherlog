@@ -35,14 +35,14 @@ data = {'field1': [],
         'field6': [],
         'field7': [],
         'field8': []}
-labels = {'field1': 'PM10',
-          'field2': 'PM2.5',
-          'field3': 'Temperatur Aussen',
-          'field4': 'Luftfeuchtigkeit Aussen',
-          'field5': 'Niederschlag',
-          'field6': 'Luftdruck',
-          'field7': 'Temperatur Innen',
-          'field8': 'Luftfeuchtigkeit Innen'}
+labels = {'field1': {'label': 'PM10', 'unit': 'ug/m3'},
+          'field2': {'label': 'PM2.5', 'unit': 'ug/m3'},
+          'field3': {'label': 'Temperatur Aussen', 'unit': 'Grad C'},
+          'field4': {'label': 'Luftfeuchtigkeit Aussen', 'unit': '%'},
+          'field5': {'label': 'Niederschlag', 'unit': ''},
+          'field6': {'label': 'Luftdruck', 'unit': 'hPa'},
+          'field7': {'label': 'Temperatur Innen', 'unit': 'Grad C'},
+          'field8': {'label': 'Luftfeuchtigkeit Innen', 'unit': '%'}}
 
 for entry in data_feed['feeds']:
     for key, values in entry.iteritems():
@@ -50,11 +50,14 @@ for entry in data_feed['feeds']:
             try:
                 data[key].append(float(values))
             except Exception:
-                data[key] = np.nan
+                data[key] = [-1]
 
 # N = 200
+# print(data)
 for f in data.keys():
     try:
+        if f == [-1]:
+            continue
         x = range(len(data[f]))
         y = data[f]
         init_field = f
@@ -64,7 +67,8 @@ source = ColumnDataSource(data=dict(x=x, y=y))
 
 
 # Set up plot
-plot = figure(plot_height=800, plot_width=800, title=labels[init_field],
+plot = figure(plot_height=800, plot_width=800,
+              title=labels[init_field]['label'],
               tools="crosshair,pan,reset,save,wheel_zoom")
 
 plot.line('x', 'y', source=source, line_width=3, line_alpha=0.6)
@@ -98,14 +102,30 @@ def update_data(inkey):
 
 
 # # Set up layouts and add to document
-button1 = Button(label="%s: %s" % (labels['field1'], data['field1'][-1]))
-button2 = Button(label="%s: %s" % (labels['field2'], data['field2'][-1]))
-button3 = Button(label="%s" % labels['field3'])
-button4 = Button(label="%s" % labels['field4'])
-button5 = Button(label="%s" % labels['field5'])
-button6 = Button(label="%s" % labels['field6'])
-button7 = Button(label="%s: %.2f" % (labels['field7'], data['field7']))
-button8 = Button(label="%s: %.2f" % (labels['field8'], data['field8']))
+button1 = Button(label=r"%s: %s %s" % (labels['field1']['label'],
+                                       data['field1'][-1],
+                                       labels['field1']['unit']))
+button2 = Button(label=r"%s: %s %s" % (labels['field2']['label'],
+                                       data['field2'][-1],
+                                       labels['field2']['unit']))
+button3 = Button(label="%s: %.1f %s" % (labels['field3']['label'],
+                                        data['field3'][-1],
+                                        labels['field3']['unit']))
+button4 = Button(label="%s: %.1f %s" % (labels['field4']['label'],
+                                        data['field4'][-1],
+                                        labels['field4']['unit']))
+button5 = Button(label="%s: %s %s" % (labels['field5']['label'],
+                                      data['field5'][-1],
+                                      labels['field5']['unit']))
+button6 = Button(label="%s: %s %s" % (labels['field6']['label'],
+                                      data['field6'][-1],
+                                      labels['field6']['unit']))
+button7 = Button(label="%s: %.1f %s" % (labels['field7']['label'],
+                                        data['field7'][-1],
+                                        labels['field7']['unit']))
+button8 = Button(label="%s: %.1f %s" % (labels['field8']['label'],
+                                        data['field8'][-1],
+                                        labels['field8']['unit']))
 
 button1.on_click(partial(update_data, inkey="field1"))
 button2.on_click(partial(update_data, inkey="field2"))
