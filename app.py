@@ -9,7 +9,7 @@ from bokeh.io import curdoc
 from bokeh.layouts import row, column
 from bokeh.models import ColumnDataSource, Button, Range1d
 from bokeh.plotting import figure
-from bokeh.models.widgets import Dropdown
+# from bokeh.models.widgets import Dropdown
 
 from functools import partial
 import json
@@ -17,6 +17,8 @@ import urllib2
 import time
 import numpy as np
 global current_field
+
+url = 'https://api.thingspeak.com/channels/{chan}/feeds.json?api_key={key}'
 
 
 def get_xaxis(data):
@@ -57,22 +59,24 @@ channels = {
             }
 
 for id in channels.keys():
-    url = 'https://api.thingspeak.com/channels/{chan}/feeds.json?api_key={key}'
     url_in = url.format(chan=channels[id]['id'], key=channels[id]['key'])
 
-    response = urllib2.urlopen(url_in)
+    try:
+        response = urllib2.urlopen(url_in)
 
-    # Set up data
-    html = response.read()
-    data_feed = json.loads(html)
-    for entry in data_feed['feeds']:
-        for key, values in entry.iteritems():
-            if key in data:
-                # print(labels[key]['label'], values)
-                try:
-                    data[key].append(float(values))
-                except Exception:
-                    continue
+        # Set up data
+        html = response.read()
+        data_feed = json.loads(html)
+        for entry in data_feed['feeds']:
+            for key, values in entry.iteritems():
+                if key in data:
+                    # print(labels[key]['label'], values)
+                    try:
+                        data[key].append(float(values))
+                    except Exception:
+                        continue
+    except Exception as e:
+        print(e)
 
 current_field = 'field7'
 x, xaxis_ticks = get_xaxis(data[current_field])
@@ -112,42 +116,39 @@ def update_data(inkey, b):
     else:
         id = 2
 
-    url = 'https://api.thingspeak.com/channels'
-    url += '/{chan}/feeds.json?api_key={key}'
     url_in = url.format(chan=channels[id]['id'], key=channels[id]['key'])
-
     response = urllib2.urlopen(url_in)
-
     # Set up data
-    html = response.read()
-    data_feed = json.loads(html)
-    for entry in data_feed['feeds']:
-        for key, values in entry.iteritems():
-            if key == inkey:
-                # print(labels[key]['label'], values)
-                try:
-                    d.append(float(values))
-                except Exception:
-                    d.append(-1)
+    try:
+        html = response.read()
+        data_feed = json.loads(html)
+        for entry in data_feed['feeds']:
+            for key, values in entry.iteritems():
+                if key == inkey:
+                    # print(labels[key]['label'], values)
+                    try:
+                        d.append(float(values))
+                    except Exception:
+                        d.append(-1)
 
+        if d is not None:
+            x, xaxis_ticks = get_xaxis(d)
+            y = d
+            plot.title.text = labels[inkey]['label']
+            if 'Temperatur' in labels[inkey]['label']:
+                plot.y_range.start = 0
+                plot.y_range.end = 30
+            elif 'Luftfeuchtigkeit' in labels[inkey]['label']:
+                plot.y_range.start = 0
+                plot.y_range.end = 100
+            else:
+                plot.y_range.start = min(d)-10
+                plot.y_range.end = max(d)+10
+            plot.yaxis.axis_label = labels[inkey]['unit']
 
-
-    if d is not None:
-        x, xaxis_ticks = get_xaxis(d)
-        y = d
-        plot.title.text = labels[inkey]['label']
-        if 'Temperatur' in labels[inkey]['label']:
-            plot.y_range.start = 0
-            plot.y_range.end = 30
-        elif 'Luftfeuchtigkeit' in labels[inkey]['label']:
-            plot.y_range.start = 0
-            plot.y_range.end = 100
-        else:
-            plot.y_range.start = min(d)-10
-            plot.y_range.end = max(d)+10
-        plot.yaxis.axis_label = labels[inkey]['unit']
-
-        source.data = dict(x=x, y=y)
+            source.data = dict(x=x, y=y)
+    except Exception as e:
+        print(e)
 
 
 def update_weather(inkey):
@@ -171,9 +172,9 @@ buttons[4] = Button(label="%s: %.1f %s" % (labels['field4']['label'],
 buttons[5] = Button(label="%s: %s %s" % (labels['field5']['label'],
                                          data['field5'][-1],
                                          labels['field5']['unit']))
-buttons[6] = Button(label="%s: %s %s" % (labels['field6']['label'],
-                                         data['field6'][-1],
-                                         labels['field6']['unit']))
+buttons[6] = Button(label="%s: %.1f %s" % (labels['field6']['label'],
+                                           data['field6'][-1],
+                                           labels['field6']['unit']))
 buttons[7] = Button(label="%s: %.1f %s" % (labels['field7']['label'],
                                            data['field7'][-1],
                                            labels['field7']['unit']))
