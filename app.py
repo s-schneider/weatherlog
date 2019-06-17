@@ -68,22 +68,11 @@ for id in channels.keys():
     for entry in data_feed['feeds']:
         for key, values in entry.iteritems():
             if key in data:
-                print(labels[key]['label'], values)
+                # print(labels[key]['label'], values)
                 try:
                     data[key].append(float(values))
                 except Exception:
                     continue
-
-# for f in data.keys():
-#     try:
-#         if f == [-1]:
-#             continue
-#         # x = range(len(data[f])
-#         x, xaxis_ticks = get_xaxis(data[f])
-#         y = data[f]
-#         current_field = f
-#     except Exception:
-#         continue
 
 current_field = 'field7'
 x, xaxis_ticks = get_xaxis(data[current_field])
@@ -115,19 +104,33 @@ plot.xaxis.major_label_overrides = xaxis_ticks
 
 # Set up callbacks
 def update_data(inkey, b):
-    response = urllib2.urlopen(url)
+    # Set up data
+    d = []
+
+    if int(inkey[-1]) in (1, 2, 3, 4, 5, 6):
+        id = 1
+    else:
+        id = 2
+
+    url = 'https://api.thingspeak.com/channels'
+    url += '/{chan}/feeds.json?api_key={key}'
+    url_in = url.format(chan=channels[id]['id'], key=channels[id]['key'])
+
+    response = urllib2.urlopen(url_in)
 
     # Set up data
     html = response.read()
     data_feed = json.loads(html)
-    d = []
     for entry in data_feed['feeds']:
         for key, values in entry.iteritems():
             if key == inkey:
+                # print(labels[key]['label'], values)
                 try:
                     d.append(float(values))
                 except Exception:
-                    d = None
+                    d.append(-1)
+
+
 
     if d is not None:
         x, xaxis_ticks = get_xaxis(d)
@@ -187,10 +190,10 @@ buttons[6].on_click(partial(update_data, inkey="field6", b=buttons[6]))
 buttons[7].on_click(partial(update_data, inkey="field7", b=buttons[7]))
 buttons[8].on_click(partial(update_data, inkey="field8", b=buttons[8]))
 
-menu = [("Channel 1", "channel_1"), ("Channel 2", "channel2_2")]
-dropdown = Dropdown(label="Dropdown button", button_type="warning", menu=menu)
+# menu = [("Channel 1", "channel_1"), ("Channel 2", "channel2_2")]
+# dropdown = Dropdown(label="Dropdown button", button_type="warning", menu=menu)
 
-inputs = column(dropdown, buttons[1], buttons[2], buttons[3], buttons[4],
+inputs = column(buttons[1], buttons[2], buttons[3], buttons[4],
                 buttons[5],
                 buttons[6], buttons[7], buttons[8])
 
