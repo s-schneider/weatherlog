@@ -9,6 +9,7 @@ from bokeh.io import curdoc
 from bokeh.layouts import row, column
 from bokeh.models import ColumnDataSource, Button, Range1d
 from bokeh.plotting import figure
+from bokeh.models.widgets import Dropdown
 
 from functools import partial
 import json
@@ -33,21 +34,14 @@ def get_xaxis(data):
     return np.arange(len(data)), label_dict
 
 
-url = 'https://api.thingspeak.com/channels/794255/'
-url += 'feeds.json?api_key=0AWEFXGCB5L3T4LC'
-response = urllib2.urlopen(url)
-
-# Set up data
-html = response.read()
-data_feed = json.loads(html)
-data = {'field1': [],
-        'field2': [],
-        'field3': [],
-        'field4': [],
-        'field5': [],
-        'field6': [],
-        'field7': [],
-        'field8': []}
+data = {'field1': [-1],
+        'field2': [-1],
+        'field3': [-1],
+        'field4': [-1],
+        'field5': [-1],
+        'field6': [-1],
+        'field7': [-1],
+        'field8': [-1]}
 labels = {'field1': {'label': 'PM10', 'unit': 'ug/m3'},
           'field2': {'label': 'PM2.5', 'unit': 'ug/m3'},
           'field3': {'label': 'Temperatur Aussen', 'unit': 'Grad C'},
@@ -57,13 +51,28 @@ labels = {'field1': {'label': 'PM10', 'unit': 'ug/m3'},
           'field7': {'label': 'Temperatur Innen', 'unit': 'Grad C'},
           'field8': {'label': 'Luftfeuchtigkeit Innen', 'unit': '%'}}
 
-for entry in data_feed['feeds']:
-    for key, values in entry.iteritems():
-        if key in data:
-            try:
-                data[key].append(float(values))
-            except Exception:
-                data[key] = [-1]
+channels = {
+            1: {'id': '801706', 'key': 'QF3J8GJU26GWBKGV'},
+            2: {'id': '734828', 'key': 'YJX4M1WU9B002N5Z'}
+            }
+
+for id in channels.keys():
+    url = 'https://api.thingspeak.com/channels/{chan}/feeds.json?api_key={key}'
+    url_in = url.format(chan=channels[id]['id'], key=channels[id]['key'])
+
+    response = urllib2.urlopen(url_in)
+
+    # Set up data
+    html = response.read()
+    data_feed = json.loads(html)
+    for entry in data_feed['feeds']:
+        for key, values in entry.iteritems():
+            if key in data:
+                print(labels[key]['label'], values)
+                try:
+                    data[key].append(float(values))
+                except Exception:
+                    continue
 
 # for f in data.keys():
 #     try:
@@ -178,7 +187,11 @@ buttons[6].on_click(partial(update_data, inkey="field6", b=buttons[6]))
 buttons[7].on_click(partial(update_data, inkey="field7", b=buttons[7]))
 buttons[8].on_click(partial(update_data, inkey="field8", b=buttons[8]))
 
-inputs = column(buttons[1], buttons[2], buttons[3], buttons[4], buttons[5],
+menu = [("Channel 1", "channel_1"), ("Channel 2", "channel2_2")]
+dropdown = Dropdown(label="Dropdown button", button_type="warning", menu=menu)
+
+inputs = column(dropdown, buttons[1], buttons[2], buttons[3], buttons[4],
+                buttons[5],
                 buttons[6], buttons[7], buttons[8])
 
 curdoc().add_root(row(inputs, plot, width=800))
