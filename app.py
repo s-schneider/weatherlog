@@ -157,21 +157,42 @@ def update_weather(inkey):
 
 # # Set up layouts and add to document
 buttons = {}
+
+if data['field1'][-1] >= 10.:
+    color = 'danger'
+else:
+    color = 'success'
 buttons[1] = Button(label=r"%s: %s %s" % (labels['field1']['label'],
                                           data['field1'][-1],
-                                          labels['field1']['unit']))
+                                          labels['field1']['unit']),
+                    button_type=color)
+
+
+if data['field2'][-1] >= 5.:
+    color = 'danger'
+else:
+    color = 'success'
 buttons[2] = Button(label=r"%s: %s %s" % (labels['field2']['label'],
                                           data['field2'][-1],
-                                          labels['field2']['unit']))
+                                          labels['field2']['unit']),
+                    button_type=color)
+
 buttons[3] = Button(label="%s: %.1f %s" % (labels['field3']['label'],
                                            data['field3'][-1],
                                            labels['field3']['unit']))
 buttons[4] = Button(label="%s: %.1f %s" % (labels['field4']['label'],
                                            data['field4'][-1],
                                            labels['field4']['unit']))
-buttons[5] = Button(label="%s: %s %s" % (labels['field5']['label'],
-                                         data['field5'][-1],
-                                         labels['field5']['unit']))
+
+if data['field5'][-1] < 0:
+    color = 'danger'
+    txt = 'Ja'
+else:
+    color = 'success'
+    txt = 'Nein'
+
+buttons[5] = Button(label="%s: %s" % (labels['field5']['label'], txt),
+                    button_type=color)
 buttons[6] = Button(label="%s: %.1f %s" % (labels['field6']['label'],
                                            data['field6'][-1],
                                            labels['field6']['unit']))
