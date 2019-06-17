@@ -27,7 +27,7 @@ channels = {
 
 
 def get_xaxis(data):
-    sampling_rate = 1
+    sampling_rate = 20
     t = time.time()
     axis = np.arange(len(data)) * sampling_rate
     xaxis = [t - (max(axis) - x) for x in axis]
