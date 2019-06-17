@@ -20,6 +20,11 @@ import numpy as np
 
 url = 'https://api.thingspeak.com/channels/{chan}/feeds.json?api_key={key}'
 
+channels = {
+            1: {'id': '801706', 'key': 'QF3J8GJU26GWBKGV'},
+            2: {'id': '734828', 'key': 'YJX4M1WU9B002N5Z'}
+            }
+
 
 def get_xaxis(data):
     sampling_rate = 1
@@ -36,27 +41,28 @@ def get_xaxis(data):
     return np.arange(len(data)), label_dict
 
 
-data = {'field1': [-1],
-        'field2': [-1],
-        'field3': [-1],
-        'field4': [-1],
-        'field5': [-1],
-        'field6': [-1],
-        'field7': [-1],
-        'field8': [-1]}
-labels = {'field1': {'label': 'PM10', 'unit': 'ug/m3'},
-          'field2': {'label': 'PM2.5', 'unit': 'ug/m3'},
-          'field3': {'label': 'Temperatur Aussen', 'unit': 'Grad C'},
-          'field4': {'label': 'Luftfeuchtigkeit Aussen', 'unit': '%'},
-          'field5': {'label': 'Niederschlag', 'unit': ''},
-          'field6': {'label': 'Luftdruck', 'unit': 'hPa'},
-          'field7': {'label': 'Temperatur Innen', 'unit': 'Grad C'},
-          'field8': {'label': 'Luftfeuchtigkeit Innen', 'unit': '%'}}
+def init_data():
+    data = {'field1': [],
+            'field2': [],
+            'field3': [],
+            'field4': [],
+            'field5': [],
+            'field6': [],
+            'field7': [],
+            'field8': []}
+    labels = {'field1': {'label': 'PM10', 'unit': 'ug/m3'},
+              'field2': {'label': 'PM2.5', 'unit': 'ug/m3'},
+              'field3': {'label': 'Temperatur Aussen', 'unit': 'Grad C'},
+              'field4': {'label': 'Luftfeuchtigkeit Aussen', 'unit': '%'},
+              'field5': {'label': 'Niederschlag', 'unit': ''},
+              'field6': {'label': 'Luftdruck', 'unit': 'hPa'},
+              'field7': {'label': 'Temperatur Innen', 'unit': 'Grad C'},
+              'field8': {'label': 'Luftfeuchtigkeit Innen', 'unit': '%'}}
 
-channels = {
-            1: {'id': '801706', 'key': 'QF3J8GJU26GWBKGV'},
-            2: {'id': '734828', 'key': 'YJX4M1WU9B002N5Z'}
-            }
+    return data, labels
+
+
+data, labels = init_data()
 
 for id in channels.keys():
     url_in = url.format(chan=channels[id]['id'], key=channels[id]['key'])
@@ -77,6 +83,10 @@ for id in channels.keys():
                         continue
     except Exception as e:
         print(e)
+
+for key in data.keys():
+    if len(data[key]) == 0:
+        data[key] == [-1]
 
 global current_field
 current_field = 'field7'
@@ -99,75 +109,78 @@ plot.xaxis.major_label_overrides = xaxis_ticks
 
 
 # Set up callbacks
-def update_data(inkey, b):
+def update_data(inkey):
     # Set up data
     global current_field
+    global buttons
     current_field = inkey
 
-
     d = []
-    if int(inkey[-1]) in (1, 2, 3, 4, 5, 6):
-        id = 1
-    else:
-        id = 2
-
-    url_in = url.format(chan=channels[id]['id'], key=channels[id]['key'])
-    response = urllib2.urlopen(url_in)
     # Set up data
-    try:
-        html = response.read()
-        data_feed = json.loads(html)
-        for entry in data_feed['feeds']:
-            for key, values in entry.iteritems():
-                if key == inkey:
-                    # print(labels[key]['label'], values)
-                    try:
-                        d.append(float(values))
-                    except Exception:
-                        d.append(-1)
+    data, labels = init_data()
+    for id in channels.keys():
+        url_in = url.format(chan=channels[id]['id'], key=channels[id]['key'])
+        try:
+            response = urllib2.urlopen(url_in)
+            html = response.read()
+            data_feed = json.loads(html)
+            for entry in data_feed['feeds']:
+                for key, values in entry.iteritems():
+                    if key in data:
+                        try:
+                            data[key].append(float(values))
+                            len(data[key])
+                        except Exception:
+                            continue
 
-        if d is not None:
-            x, xaxis_ticks = get_xaxis(d)
-            y = d
-            plot.title.text = labels[inkey]['label']
-            if 'Temperatur' in labels[inkey]['label']:
-                plot.y_range.start = 0
-                plot.y_range.end = 30
-            elif 'Luftfeuchtigkeit' in labels[inkey]['label']:
-                plot.y_range.start = 0
-                plot.y_range.end = 100
-            else:
-                plot.y_range.start = min(d)-10
-                plot.y_range.end = max(d)+10
-            plot.yaxis.axis_label = labels[inkey]['unit']
-            plot.xaxis.ticker = xaxis_ticks.keys()
-            plot.xaxis.major_label_overrides = xaxis_ticks
-            source.data = dict(x=x, y=y)
+            d = data[inkey]
+            if d is not None:
+                x, xaxis_ticks = get_xaxis(d)
+                y = d
+                plot.title.text = labels[inkey]['label']
+                if 'Temperatur' in labels[inkey]['label']:
+                    plot.y_range.start = 0
+                    plot.y_range.end = 30
+                elif 'Luftfeuchtigkeit' in labels[inkey]['label']:
+                    plot.y_range.start = 0
+                    plot.y_range.end = 100
+                else:
+                    plot.y_range.start = min(d)-10
+                    plot.y_range.end = max(d)+10
+                plot.yaxis.axis_label = labels[inkey]['unit']
+                plot.xaxis.ticker = xaxis_ticks.keys()
+                plot.xaxis.major_label_overrides = xaxis_ticks
+                source.data = dict(x=x, y=y)
 
-            if inkey in ('field1', 'field2'):
-                if 0 < d[-1] < 25.:
-                    b.button_type = 'success'
-                elif 25. <= d[-1] < 50.:
-                    b.button_type = 'warning'
-                else:
-                    b.button_type = 'danger'
-            elif inkey == 'field5':
-                if d[-1] < 0:
-                    b.button_type = 'danger'
-                    b.label = "%s: %s" % (labels[inkey]['label'], 'Ja')
-                else:
-                    b.button_type = 'success'
-                    b.label = "%s: %s" % (labels[inkey]['label'], 'Nein')
-    except Exception as e:
-        print(e)
+            for key, values in data.iteritems():
+                b = buttons[int(key[-1])]
+                print("Updating %s" % (b.label))
+                if key in ('field1', 'field2'):
+                    if values[-1] < 25.:
+                        b.button_type = 'success'
+                    elif 25. <= values[-1] < 50.:
+                        b.button_type = 'warning'
+                    else:
+                        b.button_type = 'danger'
+                elif key == 'field5':
+                    if values[-1] < 0:
+                        b.button_type = 'danger'
+                        b.label = "%s: %s" % (labels[key]['label'], 'Ja')
+                    else:
+                        b.button_type = 'success'
+                        b.label = "%s: %s" % (labels[key]['label'], 'Nein')
+            print(" ")
+        except Exception as e:
+            print(e)
+
+    for key in data.keys():
+        if len(data[key]) == 0:
+            data[key] == [-1]
 
 
 def update_weather():
-    global current_field, buttons
-    print(current_field, labels[current_field]['label'])
-    i = int(current_field[-1])
-    # print(current_field, i)  #, buttons[i])
-    update_data(current_field, buttons[i])
+    global current_field
+    update_data(current_field)
 
 
 # # Set up layouts and add to document
@@ -224,14 +237,14 @@ buttons[8] = Button(label="%s: %.1f %s" % (labels['field8']['label'],
                                            data['field8'][-1],
                                            labels['field8']['unit']))
 
-buttons[1].on_click(partial(update_data, inkey="field1", b=buttons[1]))
-buttons[2].on_click(partial(update_data, inkey="field2", b=buttons[2]))
-buttons[3].on_click(partial(update_data, inkey="field3", b=buttons[3]))
-buttons[4].on_click(partial(update_data, inkey="field4", b=buttons[4]))
-buttons[5].on_click(partial(update_data, inkey="field5", b=buttons[5]))
-buttons[6].on_click(partial(update_data, inkey="field6", b=buttons[6]))
-buttons[7].on_click(partial(update_data, inkey="field7", b=buttons[7]))
-buttons[8].on_click(partial(update_data, inkey="field8", b=buttons[8]))
+buttons[1].on_click(partial(update_data, inkey="field1"))
+buttons[2].on_click(partial(update_data, inkey="field2"))
+buttons[3].on_click(partial(update_data, inkey="field3"))
+buttons[4].on_click(partial(update_data, inkey="field4"))
+buttons[5].on_click(partial(update_data, inkey="field5"))
+buttons[6].on_click(partial(update_data, inkey="field6"))
+buttons[7].on_click(partial(update_data, inkey="field7"))
+buttons[8].on_click(partial(update_data, inkey="field8"))
 
 # menu = [("Channel 1", "channel_1"), ("Channel 2", "channel2_2")]
 # dropdown = Dropdown(label="Dropdown button", button_type="warning", menu=menu)
