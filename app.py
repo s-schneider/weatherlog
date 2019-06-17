@@ -16,7 +16,7 @@ import json
 import urllib2
 import time
 import numpy as np
-global current_field
+
 
 url = 'https://api.thingspeak.com/channels/{chan}/feeds.json?api_key={key}'
 
@@ -78,6 +78,7 @@ for id in channels.keys():
     except Exception as e:
         print(e)
 
+global current_field
 current_field = 'field7'
 x, xaxis_ticks = get_xaxis(data[current_field])
 y = data[current_field]
@@ -91,15 +92,6 @@ plot = figure(plot_height=800, plot_width=800,
 
 plot.line('x', 'y', source=source, line_width=3, line_alpha=0.6)
 plot.y_range = Range1d(0, 30)
-# if 'Temperatur' in labels[current_field]['label']:
-#     plot.y_range.start = 0
-#     plot.y_range.end = 50
-# elif 'Luftfeuchtigkeit' in labels[current_field]['label']:
-#     plot.y_range.start = 0
-#     plot.y_range.end = 100
-# else:
-#     plot.y_range.start = min(y)-10
-#     plot.y_range.end = max(y)+10
 
 plot.yaxis.axis_label = labels[current_field]['unit']
 plot.xaxis.ticker = xaxis_ticks.keys()
@@ -109,9 +101,10 @@ plot.xaxis.major_label_overrides = xaxis_ticks
 # Set up callbacks
 def update_data(inkey, b):
     # Set up data
-    d = []
+    global current_field
+    current_field = inkey
 
-    # print(type(b), b)
+    d = []
     if int(inkey[-1]) in (1, 2, 3, 4, 5, 6):
         id = 1
     else:
@@ -148,15 +141,35 @@ def update_data(inkey, b):
             plot.yaxis.axis_label = labels[inkey]['unit']
 
             source.data = dict(x=x, y=y)
+
+            if inkey in ('field1', 'field2'):
+                if 0 < d[-1] < 25.:
+                    b.button_type = 'success'
+                elif 25. <= d[-1] < 50.:
+                    b.button_type = 'warning'
+                else:
+                    b.button_type = 'danger'
+            elif inkey == 'field5':
+                if d[-1] < 0:
+                    b.button_type = 'danger'
+                    b.label = "%s: %s" % (labels[inkey]['label'], 'Ja')
+                else:
+                    b.button_type = 'success'
+                    b.label = "%s: %s" % (labels[inkey]['label'], 'Nein')
     except Exception as e:
         print(e)
 
 
-def update_weather(inkey):
-    print(labels[inkey]['label'])
+def update_weather():
+    global current_field, buttons
+    print(current_field, labels[current_field]['label'])
+    i = int(current_field[-1])
+    # print(current_field, i)  #, buttons[i])
+    update_data(current_field, buttons[i])
 
 
 # # Set up layouts and add to document
+global buttons
 buttons = {}
 
 if 0 < data['field1'][-1] < 25.:
@@ -228,5 +241,5 @@ inputs = column(buttons[1], buttons[2], buttons[3], buttons[4],
 curdoc().add_root(row(inputs, plot, width=800))
 curdoc().title = "Wetterstation"
 
-# curdoc().add_periodic_callback(partial(update_weather,
-#                                        inkey=current_field), 1000)
+# Update current plot
+curdoc().add_periodic_callback(partial(update_weather), 10000)
