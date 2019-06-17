@@ -26,7 +26,7 @@ def get_xaxis(data):
     t = time.time()
     axis = np.arange(len(data)) * sampling_rate
     xaxis = [t - (max(axis) - x) for x in axis]
-    xaxis = [time.gmtime(t - (max(axis) - x)) for x in axis]
+    xaxis = [time.gmtime(t - (max(axis) - x) + 7200) for x in axis]
     xaxis = ["%.2d:%.2d:%.2d" % (x.tm_hour, x.tm_min, x.tm_sec) for x in xaxis]
 
     label_dict = {}
@@ -104,6 +104,7 @@ def update_data(inkey, b):
     global current_field
     current_field = inkey
 
+
     d = []
     if int(inkey[-1]) in (1, 2, 3, 4, 5, 6):
         id = 1
@@ -139,7 +140,8 @@ def update_data(inkey, b):
                 plot.y_range.start = min(d)-10
                 plot.y_range.end = max(d)+10
             plot.yaxis.axis_label = labels[inkey]['unit']
-
+            plot.xaxis.ticker = xaxis_ticks.keys()
+            plot.xaxis.major_label_overrides = xaxis_ticks
             source.data = dict(x=x, y=y)
 
             if inkey in ('field1', 'field2'):
@@ -242,4 +244,4 @@ curdoc().add_root(row(inputs, plot, width=800))
 curdoc().title = "Wetterstation"
 
 # Update current plot
-curdoc().add_periodic_callback(partial(update_weather), 10000)
+curdoc().add_periodic_callback(partial(update_weather), 15000)
