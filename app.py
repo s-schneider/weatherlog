@@ -111,6 +111,7 @@ def update_data(inkey, b):
     # Set up data
     d = []
 
+    # print(type(b), b)
     if int(inkey[-1]) in (1, 2, 3, 4, 5, 6):
         id = 1
     else:
@@ -158,20 +159,25 @@ def update_weather(inkey):
 # # Set up layouts and add to document
 buttons = {}
 
-if data['field1'][-1] >= 10.:
-    color = 'danger'
-else:
+if 0 < data['field1'][-1] < 25.:
     color = 'success'
+elif 25. <= data['field1'][-1] < 50.:
+    color = 'warning'
+else:
+    color = 'danger'
+
 buttons[1] = Button(label=r"%s: %s %s" % (labels['field1']['label'],
                                           data['field1'][-1],
                                           labels['field1']['unit']),
                     button_type=color)
 
 
-if data['field2'][-1] >= 5.:
-    color = 'danger'
-else:
+if 0 < data['field2'][-1] < 25.:
     color = 'success'
+elif 25. <= data['field2'][-1] < 50.:
+    color = 'warning'
+else:
+    color = 'danger'
 buttons[2] = Button(label=r"%s: %s %s" % (labels['field2']['label'],
                                           data['field2'][-1],
                                           labels['field2']['unit']),
