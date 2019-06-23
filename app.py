@@ -120,58 +120,66 @@ def update_data(inkey):
     data, labels = init_data()
     for id in channels.keys():
         url_in = url.format(chan=channels[id]['id'], key=channels[id]['key'])
-        try:
-            response = urllib2.urlopen(url_in)
-            html = response.read()
-            data_feed = json.loads(html)
-            for entry in data_feed['feeds']:
-                for key, values in entry.iteritems():
-                    if key in data:
-                        try:
-                            data[key].append(float(values))
-                            len(data[key])
-                        except Exception:
-                            continue
+        # try:
+        response = urllib2.urlopen(url_in)
+        html = response.read()
+        data_feed = json.loads(html)
+        for entry in data_feed['feeds']:
+            for key, values in entry.iteritems():
+                if key in data:
+                    try:
+                        data[key].append(float(values))
+                        len(data[key])
+                    except Exception:
+                        continue
 
-            d = data[inkey]
-            if d is not None:
-                x, xaxis_ticks = get_xaxis(d)
-                y = d
-                plot.title.text = labels[inkey]['label']
-                if 'Temperatur' in labels[inkey]['label']:
-                    plot.y_range.start = 0
-                    plot.y_range.end = 30
-                elif 'Luftfeuchtigkeit' in labels[inkey]['label']:
-                    plot.y_range.start = 0
-                    plot.y_range.end = 100
+        d = data[inkey]
+        if d is not None:
+            x, xaxis_ticks = get_xaxis(d)
+            y = d
+            plot.title.text = labels[inkey]['label']
+            if 'Temperatur' in labels[inkey]['label']:
+                plot.y_range.start = 0
+                plot.y_range.end = 30
+            elif 'Luftfeuchtigkeit' in labels[inkey]['label']:
+                plot.y_range.start = 0
+                plot.y_range.end = 100
+            else:
+                plot.y_range.start = min(d)-10
+                plot.y_range.end = max(d)+10
+            plot.yaxis.axis_label = labels[inkey]['unit']
+            plot.xaxis.ticker = xaxis_ticks.keys()
+            plot.xaxis.major_label_overrides = xaxis_ticks
+            source.data = dict(x=x, y=y)
+
+        for key, values in data.iteritems():
+            b = buttons[int(key[-1])]
+            print("Aktuell %s" % (b.label))
+            if values == []:
+                continue
+            if key in ('field1', 'field2'):
+                if values[-1] < 25.:
+                    b.button_type = 'success'
+                elif 25. <= values[-1] < 50.:
+                    b.button_type = 'warning'
                 else:
-                    plot.y_range.start = min(d)-10
-                    plot.y_range.end = max(d)+10
-                plot.yaxis.axis_label = labels[inkey]['unit']
-                plot.xaxis.ticker = xaxis_ticks.keys()
-                plot.xaxis.major_label_overrides = xaxis_ticks
-                source.data = dict(x=x, y=y)
+                    b.button_type = 'danger'
+            elif key == 'field5':
+                if values[-1] < 0:
+                    b.button_type = 'danger'
+                    b.label = "%s: %s" % (labels[key]['label'], 'Ja')
+                else:
+                    b.button_type = 'success'
+                    b.label = "%s: %s" % (labels[key]['label'], 'Nein')
+            else:
+                b.label = "%s: %.1f %s" % (labels[key]['label'],
+                                           values[-1],
+                                           labels[key]['unit'])
+            print("Update %s" % (b.label))
 
-            for key, values in data.iteritems():
-                b = buttons[int(key[-1])]
-                print("Updating %s" % (b.label))
-                if key in ('field1', 'field2'):
-                    if values[-1] < 25.:
-                        b.button_type = 'success'
-                    elif 25. <= values[-1] < 50.:
-                        b.button_type = 'warning'
-                    else:
-                        b.button_type = 'danger'
-                elif key == 'field5':
-                    if values[-1] < 0:
-                        b.button_type = 'danger'
-                        b.label = "%s: %s" % (labels[key]['label'], 'Ja')
-                    else:
-                        b.button_type = 'success'
-                        b.label = "%s: %s" % (labels[key]['label'], 'Nein')
-            print(" ")
-        except Exception as e:
-            print(e)
+        print(" ")
+        # except Exception as e:
+        #     print(e)
 
     for key in data.keys():
         if len(data[key]) == 0:
