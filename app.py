@@ -18,6 +18,7 @@ import time
 import numpy as np
 
 global channels
+global chans
 
 url = 'https://api.thingspeak.com/channels/{chan}/feeds.json?api_key={key}'
 
@@ -196,8 +197,18 @@ def update_data(inkey):
             data[key] == [-1]
 
 
+# Callback functions
 def update_weather():
     global current_field
+    update_data(current_field)
+
+
+def function_to_call(attr, old, new):
+    global channels
+    global chans
+    global curren_field
+
+    channels = chans[dropdown.value]
     update_data(current_field)
 
 
@@ -264,12 +275,15 @@ buttons[6].on_click(partial(update_data, inkey="field6"))
 buttons[7].on_click(partial(update_data, inkey="field7"))
 buttons[8].on_click(partial(update_data, inkey="field8"))
 
-menu = [("Channel 1", "channel_1"), ("Channel 2", "channel2_2")]
-dropdown = Dropdown(label="Dropdown button", button_type="warning", menu=menu)
-
+menu = [("Ennepetal", "server1"), ("Witten", "server2")]
+dropdown = Dropdown(label="Standort", menu=menu)
 inputs = column(dropdown, buttons[1], buttons[2], buttons[3], buttons[4],
                 buttons[5],
                 buttons[6], buttons[7], buttons[8])
+
+
+dropdown.on_change('value', function_to_call)
+
 
 curdoc().add_root(row(inputs, plot, width=800))
 curdoc().title = "Wetterstation"
