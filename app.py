@@ -169,6 +169,9 @@ def update_data(inkey):
             continue
 
         if key in ('field1', 'field2'):
+            b.label = r"%s: %s %s" % (labels[key]['label'],
+                                      values[-1],
+                                      labels[key]['unit'])
             if values[-1] < 25.:
                 b.button_type = 'success'
             elif 25. <= values[-1] < 50.:
