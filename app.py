@@ -19,6 +19,7 @@ import numpy as np
 
 global channels
 global chans
+global dropdown
 
 url = 'https://api.thingspeak.com/channels/{chan}/feeds.json?api_key={key}'
 
@@ -207,8 +208,12 @@ def function_to_call(attr, old, new):
     global channels
     global chans
     global curren_field
+    global dropdown
 
     channels = chans[dropdown.value]
+    for key in dropdown.menu:
+        if dropdown.value in key[1]:
+            dropdown.label = 'Standort: %s' % key[0]
     update_data(current_field)
 
 
@@ -276,7 +281,7 @@ buttons[7].on_click(partial(update_data, inkey="field7"))
 buttons[8].on_click(partial(update_data, inkey="field8"))
 
 menu = [("Ennepetal", "server1"), ("Witten", "server2")]
-dropdown = Dropdown(label="Standort", menu=menu)
+dropdown = Dropdown(label="Standort: Ennepetal", menu=menu)
 inputs = column(dropdown, buttons[1], buttons[2], buttons[3], buttons[4],
                 buttons[5],
                 buttons[6], buttons[7], buttons[8])
