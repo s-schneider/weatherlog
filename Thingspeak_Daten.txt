@@ -1,0 +1,14 @@
+Thingspeak
+
+Felder 1 - 6!!!!
+Name:		Umwelt_Wetter_Station
+Channel ID:	817401
+Author:		trompete1
+Write API Key:	1MXHLKIJ7MJU0N27
+Read API Key:	YPM1M7A6V7K72OK1
+
+
+Felder 7 -8
+channel_id = 794255
+write_key  = 'U9TPDQ3KWVHZ2G0X' 
+read_key   = '0AWEFXGCB5L3T4LC' 

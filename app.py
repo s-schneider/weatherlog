@@ -9,7 +9,7 @@ from bokeh.io import curdoc
 from bokeh.layouts import row, column
 from bokeh.models import ColumnDataSource, Button, Range1d
 from bokeh.plotting import figure
-# from bokeh.models.widgets import Dropdown
+from bokeh.models.widgets import Dropdown
 
 from functools import partial
 import json
@@ -17,13 +17,23 @@ import urllib2
 import time
 import numpy as np
 
+global channels
 
 url = 'https://api.thingspeak.com/channels/{chan}/feeds.json?api_key={key}'
 
-channels = {
+channels1 = {
             1: {'id': '801706', 'key': 'QF3J8GJU26GWBKGV'},
             2: {'id': '734828', 'key': 'YJX4M1WU9B002N5Z'}
             }
+
+channels2 = {
+            1: {'id': '817401', 'key': '1MXHLKIJ7MJU0N27'},
+            2: {'id': '794255', 'key': 'U9TPDQ3KWVHZ2G0X'}
+            }
+
+chans = {'server1': channels1, 'server2': channels2}
+
+channels = chans['server1']
 
 
 def get_xaxis(data):
@@ -165,7 +175,7 @@ def update_data(inkey):
                 else:
                     b.button_type = 'danger'
             elif key == 'field5':
-                if values[-1] < 0:
+                if values[-1] <= 0:
                     b.button_type = 'danger'
                     b.label = "%s: %s" % (labels[key]['label'], 'Ja')
                 else:
@@ -254,10 +264,10 @@ buttons[6].on_click(partial(update_data, inkey="field6"))
 buttons[7].on_click(partial(update_data, inkey="field7"))
 buttons[8].on_click(partial(update_data, inkey="field8"))
 
-# menu = [("Channel 1", "channel_1"), ("Channel 2", "channel2_2")]
-# dropdown = Dropdown(label="Dropdown button", button_type="warning", menu=menu)
+menu = [("Channel 1", "channel_1"), ("Channel 2", "channel2_2")]
+dropdown = Dropdown(label="Dropdown button", button_type="warning", menu=menu)
 
-inputs = column(buttons[1], buttons[2], buttons[3], buttons[4],
+inputs = column(dropdown, buttons[1], buttons[2], buttons[3], buttons[4],
                 buttons[5],
                 buttons[6], buttons[7], buttons[8])
 
